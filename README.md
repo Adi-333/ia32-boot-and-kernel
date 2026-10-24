@@ -12,7 +12,7 @@ The book targets the x86 PC platform. It boots in 16-bit real mode (8086-compati
 ## Table of Contents
 1. [Starting the system](#starting-the-system)
 2. [Boot Sector ( What and a basic demonstration )](#boot-sector)
-3. [Interrupts](#interrupts)
+3. [Using Interrupts](#using-interrupts)
 
 
 ## Starting the system
@@ -93,7 +93,7 @@ You can try it out using
 First we'll try to print something on the screen.<br>
 We don't have any functions to do the same yet, so we'll have ask the `BIOS` to do the same ---- The question is how are we going to talk to the BIOS?<br>
 
-## Interrupts 
+## Using Interrupts 
 There is a very neat thing at the basics of computer mechanism called `Interrupts`.
 (<i> Interrupts are a mechanism that allow the CPU temporarily to halt what it is doing and run some other, higher-priority instructions before returning to the original task.</i> ~ an excerpt from the book)
 
@@ -117,3 +117,24 @@ x86 CPUs have 4 main general purpose registers, `ax`, `bx`, `cx`, and `dx`.
 The neat thing is that they allow us to manupulate the high and low bits independently (` [15-8] and [7-0] bits `) such as:
 
 ![High and Low example,ax ah al](./images/highandlow.png)
+
+
+Now with that knowledge, let's print "Hi" on the screen <br> 
+I've created a file named `02-bootsector-hello.asm`
+
+![bootsector code to print hi on the screen](./images/02bootsechi.png)
+<br>
+- Again, `[BITS 16]` and `[ORG 0x7C00]` mean the same as explained above in the first demo
+
+- `mov, ah, 0x0E` sets the high bits of `ax` to `0x0E` which is the function code for teletype print.
+- `mov al, 'H'` sets the lower bits of `ax` to the ASCII value of `H`, the stuff in the lower bits is what that's going to be printed
+- `int 0x10` is for triggering the BIOS interupt, where this specific interupt (`0x10`) is the umbrella for all the video/screen related services.
+> Setting `AH` to `0x0E` essentially selects the teletype printing routine within the BIOS video service handler invoked by `INT 0x10`.
+
+- `jmp $` is used to jump back to the current position, i.e an infinite loop (`$` = current position of the assembler).
+
+- `times 510 - ($ -$$) db 0` and `dw 0xaa55` is again, as explained above, used for adding padding of 0s and ending with the magic number
+
+the output upon running `qemu-system-i386 -drive format=raw,file=02-bootsector-hello.bin` would be <br>
+
+![output of the bootsector HI program](/images/02bootsectionoutput.png)
